@@ -50,3 +50,12 @@ def test_filters(config_file):
                     continue
 
                 print("Title: {}\nMessage:{}\n".format(f['title'].format(*m.groups()), f['body'].format(*m.groups())))
+
+
+@main_entry_point.command()
+@click.option("-c", "--config-file", required=True)
+def test_notifiers(config_file):
+    app_config = config.load(config_file)
+    app_notifiers = notifiers.create_notifiers(app_config)
+    for notifier in app_notifiers:
+        notifier.notify("This is a test message", "This is the message body")
