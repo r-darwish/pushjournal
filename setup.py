@@ -14,8 +14,8 @@ with open(_in_same_dir("pushjournal", "__version__.py")) as version_file:
     exec(version_file.read())  # pylint: disable=W0122
 
 install_requires = [
-    "pushbullet.py",
     "click",
+    "requests",
     "PyYAML"
 ]
 setup(name="pushjournal",

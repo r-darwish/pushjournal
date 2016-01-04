@@ -1,6 +1,7 @@
 import socket
+import json
+import requests
 from smtplib import SMTP
-import pushbullet
 from . import config
 
 
@@ -10,15 +11,21 @@ class Notifier(object):
 
 
 class Pushbullet(Notifier):
+    PUSH_URL = "https://api.pushbullet.com/v2/pushes"
+
     def __init__(self, key, prepend_hostname):
-        self._pb = pushbullet.Pushbullet(key)
+        self._session = requests.Session()
+        self._session.auth = (key, "")
+        self._session.headers.update({'Content-Type': 'application/json'})
         self._prepend_hostname = prepend_hostname
 
     def notify(self, title, message):
         if self._prepend_hostname:
             title = "{} - {}".format(socket.gethostname(), title)
 
-        self._pb.push_note(title, message)
+        data = {"type": "note", "title": title, "body": message}
+        r = self._session.post(self.PUSH_URL, data=json.dumps(data))
+        r.raise_for_status()
 
 
 class Smtp(Notifier):
@@ -55,7 +62,7 @@ def create_notifiers(app_config):
             if "key" not in n:
                 raise config.ConfigError("Missing key for Pushbullet notifier")
             notifiers.append(Pushbullet(n['key'], n.get('prepend_hostname', False)))
-        if n["type"] == "smtp":
+        elif n["type"] == "smtp":
             for required in ["host", "from", "to"]:
                 if required not in n:
                     raise config.ConfigError("\"{}\" is a required value for SMTP notifier")
