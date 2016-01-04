@@ -1,3 +1,5 @@
+import os
+import tempfile
 import click
 from systemd import journal
 import re
@@ -16,6 +18,14 @@ def run(config_file):
     app_config = config.load(config_file)
     app_notifiers = notifiers.create_notifiers(app_config)
     reader = journal.Reader()
+    boot_file = os.path.join(tempfile.gettempdir(), ".pushjournal-boot")
+
+    if app_config.get("notify_boot", False) and not os.path.isfile(boot_file):
+        for notifier in app_notifiers:
+            notifier.notify("System booted", "")
+
+        with open(boot_file, "wb"):
+            pass
 
     for f in app_config['filters']:
         f['match'] = re.compile(f['match'])
