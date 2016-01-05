@@ -1,0 +1,21 @@
+notifiers:
+  - type: pushbullet
+    key: "myapikey"
+    prepend_hostname: true
+  - type: smtp
+    host: smtp.mailgun.org
+    port: 587
+    use_tls: true
+    user: postmaster@mgmydomain.com.
+    password: mymailgunpassword
+    from: "Hostname <hostname@mydomain.com>"
+    to:
+      - admin@mydomain.com
+filters:
+  - match: "\\[(.*?)\\] Peer Connection Initiated with \\[AF_INET\\](.+)"
+    title: "OpenVPN Login"
+    body: "{0} logged in from {1}"
+  - match: "Accepted publickey for (.*?) from (.*?) port (.*?) "
+    title: "SSH Login"
+    body: "Public key login of {0} from {1}:{2}"
+notify_boot: true

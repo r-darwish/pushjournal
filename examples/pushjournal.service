@@ -1,0 +1,12 @@
+[Unit]
+Description=Pushjournal
+After=network.target
+Requires=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pushjournal run -c /etc/pushjournal.yml
+User=pushjournal
+
+[Install]
+WantedBy=multi-user.target
