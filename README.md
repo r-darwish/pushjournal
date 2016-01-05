@@ -9,6 +9,7 @@ Pushjournal is a daemon that listens for the systemd's journal and sends push no
 
 ## Usage
 See `examples/pushjournal.yml` for an example of a configuration file. There are two subcommands to help testing your configuration:
+
 1. `pushjournal test_notifiers -c path_to_config` will try to send a test message through all of your notifiers.
 2. `pushjournal test_filters -c path_to_config` will run through your journal history and print entries matching your filters.
 
