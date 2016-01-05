@@ -1,5 +1,7 @@
 import os
 import tempfile
+import socket
+from time import sleep
 import click
 from systemd import journal
 import re
@@ -12,6 +14,18 @@ def main_entry_point():
     pass
 
 
+def _notify(app_notifiers, title, body, retry):
+    for notifier in app_notifiers:
+        while True:
+            try:
+                notifier.notify(title, body)
+            except socket.error:
+                if not retry:
+                    raise
+                sleep(5)
+            else:
+                break
+
 @main_entry_point.command()
 @click.option("-c", "--config-file", required=True)
 def run(config_file):
@@ -21,8 +35,7 @@ def run(config_file):
     boot_file = os.path.join(tempfile.gettempdir(), ".pushjournal-boot")
 
     if app_config.get("notify_boot", False) and not os.path.isfile(boot_file):
-        for notifier in app_notifiers:
-            notifier.notify("System booted", "")
+        _notify(app_notifiers, "System booted", "", True)
 
         with open(boot_file, "wb"):
             pass
@@ -39,8 +52,7 @@ def run(config_file):
                 if not m:
                     continue
 
-                for notifier in app_notifiers:
-                    notifier.notify(f['title'].format(*m.groups()), f['body'].format(*m.groups()))
+                _notify(app_notifiers, f['title'].format(*m.groups()), f['body'].format(*m.groups()), False)
 
 
 @main_entry_point.command()
@@ -67,5 +79,4 @@ def test_filters(config_file):
 def test_notifiers(config_file):
     app_config = config.load(config_file)
     app_notifiers = notifiers.create_notifiers(app_config)
-    for notifier in app_notifiers:
-        notifier.notify("This is a test message", "This is the message body")
+    _notify(app_notifiers, "This is a test message", "This is the message body", True)
