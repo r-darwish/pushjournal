@@ -20,7 +20,12 @@ install_requires = [
 ]
 setup(name="pushjournal",
       classifiers=[
+          "Programming Language :: Python :: 2.7",
+          "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
+          "Intended Audience :: System Administrators",
+          "Operating System :: POSIX :: Linux",
+          "Topic :: System :: Monitoring",
       ],
       description="Get notified about important events via PushBullet",
       license="BSD",
