@@ -16,6 +16,7 @@ with open(_in_same_dir("pushjournal", "__version__.py")) as version_file:
 install_requires = [
     "click",
     "logbook",
+    "netifaces",
     "requests",
     "PyYAML"
 ]
