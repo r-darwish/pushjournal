@@ -2,9 +2,11 @@ import os
 import tempfile
 import socket
 from time import sleep
+import re
+import traceback
 import click
 from systemd import journal
-import re
+import logbook
 from . import config
 from . import notifiers
 
@@ -22,6 +24,7 @@ def _notify(app_notifiers, title, body, retry):
             except socket.error:
                 if not retry:
                     raise
+                logbook.error("Socket error: {}", traceback.format_exc())
                 sleep(5)
             else:
                 break
@@ -29,6 +32,8 @@ def _notify(app_notifiers, title, body, retry):
 @main_entry_point.command()
 @click.option("-c", "--config-file", required=True)
 def run(config_file):
+    error_handler = logbook.SyslogHandler('pushjournal', level='INFO')
+    error_handler.push_application()
     app_config = config.load(config_file)
     app_notifiers = notifiers.create_notifiers(app_config)
     reader = journal.Reader()
