@@ -2,11 +2,25 @@ import os
 import tempfile
 import socket
 from time import sleep
+import re
+import traceback
 import click
 from systemd import journal
-import re
+import logbook
+import netifaces
+from ._compat import urlopen
 from . import config
 from . import notifiers
+
+
+def _get_local_ips():
+    for iface in netifaces.interfaces():
+        for addr in netifaces.ifaddresses(iface)[netifaces.AF_INET]:
+            yield iface, addr['addr']
+
+
+def _get_public_ip():
+    return urlopen('http://ip.42.pl/raw').read().decode("ASCII")
 
 
 @click.group()
@@ -22,6 +36,7 @@ def _notify(app_notifiers, title, body, retry):
             except socket.error:
                 if not retry:
                     raise
+                logbook.error("Socket error: {}", traceback.format_exc())
                 sleep(5)
             else:
                 break
@@ -29,13 +44,32 @@ def _notify(app_notifiers, title, body, retry):
 @main_entry_point.command()
 @click.option("-c", "--config-file", required=True)
 def run(config_file):
+    error_handler = logbook.SyslogHandler('pushjournal', level='INFO')
+    error_handler.push_application()
     app_config = config.load(config_file)
     app_notifiers = notifiers.create_notifiers(app_config)
     reader = journal.Reader()
     boot_file = os.path.join(tempfile.gettempdir(), ".pushjournal-boot")
 
     if app_config.get("notify_boot", False) and not os.path.isfile(boot_file):
-        _notify(app_notifiers, "System booted", "", True)
+        body = ""
+
+        if app_config.get("show_public_ip", False):
+            try:
+                body += "Public IP: {}\n\n".format(_get_public_ip())
+            except Exception:
+                logbook.error("Could not get the public IP: {}", traceback.format_exc())
+                body += "Failed to get the public IP\n"
+
+        if app_config.get("show_local_ips", False):
+            try:
+                body += "Local IPs:\n{}\n\n".format(
+                    "\n".join("- {}: {}".format(*addr) for addr in _get_local_ips()))
+            except Exception:
+                logbook.error("Could not get local IPs: {}", traceback.format_exc())
+                body += "Failed to get local IPs\n"
+
+        _notify(app_notifiers, "System booted", body, True)
 
         with open(boot_file, "wb"):
             pass
