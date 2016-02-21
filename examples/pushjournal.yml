@@ -19,3 +19,5 @@ filters:
     title: "SSH Login"
     body: "Public key login of {0} from {1}:{2}"
 notify_boot: true
+show_public_ip: true  # show the public IP address on boot notification
+show_local_ips: true  # show the list of local IP addresses on boot notification
